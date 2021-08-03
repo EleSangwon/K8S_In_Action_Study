@@ -168,5 +168,57 @@ kubectl -n k8saction describe svc sangwon-service
 Endpoints 가 192.168.2.221:8080 이다 
 
 파드의 IP는 192.168.2.221 이다.
+
+curl <외부 IP>:포트로 결과를 확인한다.
 ```
-![캡처13](https://user-images.githubusercontent.com/50174803/127975803-7b366dce-9d33-42ea-a3f1-74e1eeda5bbe.PNG)
+![캡처13](https://user-images.githubusercontent.com/50174803/127976462-666df294-8a77-4db6-9d7f-10aec131466b.PNG)
+
+## 서비스에 관한 테스트 - 파드
+```
+sangwon-container 라는 파드를 expose 시켜 sangwon-service 라는 서비스를 만들었고 
+그 서비스는 curl <외부 IP>:포트로 액세스 가능한 상태이다.
+
+이제 sangwon-container 라는 파드를 지우고 남아있는 서비스 객체로 curl 명령어를 날리면
+결과를 받아올 수 없다.
+
+동일한 이미지의 파드를 재생성하고 curl 명령어를 날려도 역시 결과를 받아올 수 없다.
+
+describe로 service를 확인해보니, Endpoints가 정의되어 있지 않아 동일한 파드를 재생성해도
+결과를 확인할 수 없다.
+
+만약 서비스로 결과를 받아오려면 재생성한 파드를 서비스 객체로 노출시켜야 한다.
+
+```
+![캡처14](https://user-images.githubusercontent.com/50174803/127978439-30c54510-c093-4f5e-bc8f-9961c743631d.PNG)
+
+## 서비스에 관한 테스트 - 디플로이먼트
+```
+kind : deployment로 아래 yaml을 배포한다.
+```
+![캡처16](https://user-images.githubusercontent.com/50174803/127979745-03fa5558-9861-40f2-af20-0fce2f750a8e.jpg)
+
+```
+deployment를 service로 노출시킨다. 
+```
+![캡처15](https://user-images.githubusercontent.com/50174803/127979892-2f5881be-2fc2-4fdc-9000-1c3e0060f739.PNG)
+
+```
+describe 로 service의 엔드포인트를 확인해보자. 
+192.168.9.162로 nginx-deployment 의 IP와 동일하다 .
+
+deployment로 배포된 파드를 삭제하면 replica가 1이기 때문에 롤링 업데이트 방식으로
+
+기존의 파드를 삭제하고 새로운 파드가 생성된다.
+다시 service의 엔드포인트를 확인해보자.
+192.168.2.221 로 바뀌었고 이 IP는 새로 생성된 nginx-deployment 의 IP와 동일하다.
+```
+![캡처17](https://user-images.githubusercontent.com/50174803/127980295-12c8896c-d6ec-4eec-8c53-4efba9308b4f.PNG)
+
+## 두 가지 테스트를 통해 얻을 수 있는 결론
+```
+Kind: Pod를 통해 서비스 객체를 만들면, 해당 파드가 사라지면 서비스의 엔드포인트가 정의되지 않아
+외부에서 액세스할 수 없다.
+
+그러나, Kind: Deployment 를 통해 서비스 객체를 만들면, 해당 파드가 사라지더라도 정의된 레플리카의 수 만큼
+파드가 생성되고 새로운 파드의 IP로 서비스의 앤드포인트가 변화하여 중단없이 외부에서 액세스 가능하다.
+```
