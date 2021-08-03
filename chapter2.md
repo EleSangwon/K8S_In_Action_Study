@@ -79,3 +79,94 @@ docker run -p 8080:8080 -d sangwondockerhub/sangwon
 
 ## 쿠버네티스 클러스터와 상호작용 하는 방법
 ![캡처88](https://user-images.githubusercontent.com/50174803/127970945-f49ff5a3-aad1-459b-9245-d3c90f9f7791.jpg)
+
+## 쿠버네티스로 앱 배포
+```
+Pod 생성 시, 계속 Pending 이여서 describe 로 확인해보니 한 개의 노드에 할당가능한 파드 개수를 초과해서
+오토 스케일링으로 노드를 2개 생성하여 Pending - > Running 되도록 만듬
+```
+![캡처99](https://user-images.githubusercontent.com/50174803/127971833-d3ae2715-de38-4c52-807b-b5a266254c73.png)
+![캡처10](https://user-images.githubusercontent.com/50174803/127971842-d921f04f-6cd9-4275-b67a-c2618f681c7e.png)
+
+## 파드
+```
+파드는 하나 이상의 밀접하게 관련된 컨테이너로 구성된 그룹을 의미한다.
+동일한 리눅스 네임스페이스와 동일한 워커 노드에서 항상 함꼐 실행된다.
+
+각 파드는 애플리케이션을 실행하는 자체 IP, 호스트 이름, 프로세스 등이 있는
+별도의 논리적 시스템이다. 
+
+애플리케이션은 단일 컨테이너로 실행되는 단일 프로세스일 수도 있고 
+주요 애플리케이션 프로세스 및 각각의 자체 컨테이너에서 실행되는 지원 프로세스 일 수도 있다.
+```
+## 컨테이너, 포드, 워커노드 간 관계
+![캡처11](https://user-images.githubusercontent.com/50174803/127973036-bd08941e-32e1-4532-8c2b-069ac71f6ded.jpg)
+
+## 화면 뒤에 숨겨진 내용 이해
+```
+- 쿠버네티스 내부에서 컨테이너 이미지를 실행하려면 거쳐야 하는 단계
+
+먼저 이미지를 제작해 도커허브에 푸시한다 (혹은 aws ecr 등의 이미지 리포지토리 사용)
+
+kubectl 명령어를 실행해 쿠버네티스 API 서버에 REST HTTP 요청을 전송해 클러스터에
+새로운 래플리카 객체를 만든다.
+
+래플리카 객체는 새로운 파드를 생성하고 스케줄러에 의해 워커 노드 중 하나에
+스케줄링된다.
+
+마스터 노드로부터 kubelet 은 통지를 받고 kubelet이 도커에게 이미지를
+실행하도록 한다.
+
+도커는 이미지를 풀하고 실행한다.
+```
+![캡처12](https://user-images.githubusercontent.com/50174803/127974301-17606fda-20f2-425a-bfe3-ab21dc86abbd.jpg)
+
+## 애플리케이션 액세스
+```
+실행 중인 파드를 어떻게 액세스할 수 있을까? 
+각 파드에는 자체 IP주소가 있지만 이 주소는 클러스터 내부에 있으며 외부에서 액세스 할 수 없다.
+
+외부에서 액세스할 수 있도록 하려면 서비스 객체를 통해(Kind: Service) IP를 노출해야 한다.
+
+파드와 같은 일반 서비스(ClusterIP 서비스)를 만들면 클러스터 내부에서만 액세스할 수 있기 떄문에
+LoadBalancer 형태의 서비스를 만든다.
+
+LB 형태의 서비스를 만들면 외부 로드 밸런서가 생성되므로 로드 밸런서의 공용 IP를 통해
+파드에 연결할 수 있다.
+
++ 내가 알고 있는 지식 더하기
+
+Kind : Service에는 여러 가지 type이 있는 데 NodePort 으로 노출시켜 외부에서 액세스할 수 있다.
+
+AWS 를 사용한다고 가정한다.
+예를 들어, 워커노드 A에 프론트앤드 파드가 있다.
+
+이 프론트 앤드 파드를 서비스 객체 + NodePort 타입으로 노출시키고
+노드포트를 3000으로 설정한다.
+
+그리고 워커노드 A (EC2) 에 보안그룹 (SG) 규칙 inbound 에 3000번 포트를 추가하면
+워커노드A의 퍼블릭 IP:3000 으로 서비스 객체에 액세스할 수 있다.
+
+그러나, 이 방법은 보안상 취약하기 떄문에 테스트 시에만 주로 사용한다.
+```
+
+## 서비스 객체의 생성
+```
+k8saction 이라는 네임스페이스에 있는 리소스를 확인한다.
+kubectl -n k8saction get all
+
+해당 네임스페이스에 존재하는 파드를 로드밸런서 타입으로 sangwon-service라는 이름으로 생성한다
+kubectl -n k8saction expose pod sangwon-container --type=LoadBalancer --name sangwon-service
+
+k8saction 이라는 네임스페이스에 있는 리소스를 확인한다.
+서비스가 추가됨을 확인할 수 있다
+kubectl -n k8saction get all
+
+describe를 사용하여 자세히 들여다본다.
+kubectl -n k8saction describe svc sangwon-service
+
+Endpoints 가 192.168.2.221:8080 이다 
+
+파드의 IP는 192.168.2.221 이다.
+```
+![캡처13](https://user-images.githubusercontent.com/50174803/127975803-7b366dce-9d33-42ea-a3f1-74e1eeda5bbe.PNG)
