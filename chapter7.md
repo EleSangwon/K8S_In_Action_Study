@@ -1,4 +1,4 @@
-# Chpater7 : ConfigMap과 스크릿 - 애플리케이션 설정 P297 ~
+# Chpater7 : ConfigMap과 스크릿 - 애플리케이션 설정 P297 ~ 342
  
 ## 쿠버네티스에 설정 옵션을 전달하는 방법
 
