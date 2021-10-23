@@ -39,4 +39,21 @@
 
 ![image](https://user-images.githubusercontent.com/50174803/138428244-8b682bb9-e640-4921-ad94-126be160c010.png)
 
-## 롤 기반 접근 제어 클러스터 보안 520
+## RBAC 리소스
+```
+RBAC 인증 규칙은 네 가지 리소스로 구성되며 두 가지 그룹으로 그룹화할 수 있다.
+
+* 리소스에서 수행할 수 있는 동사를 지정하는 롤 및 클러스터롤
+* 위의 롤을 특정 사용자, 그룹 또는 서비스어카운트에 바인딩하는 롤바인딩 및 클러스터롤바인딩
+
+롤과 롤바인딩은 네임스페이스 수준 리소스
+클러스터롤과 클러스터롤바인딩은 클러스터 수준 리소스
+```
+![image](https://user-images.githubusercontent.com/50174803/138555843-57b1a58d-74a4-46a0-9490-27c92934054c.png)
+
+![image](https://user-images.githubusercontent.com/50174803/138555811-bbe53008-0b11-47f1-9640-06d7378784dc.png)
+
+![image](https://user-images.githubusercontent.com/50174803/138555867-f260ba10-09d7-4f2b-93d6-e1e50fe5e914.png)
+
+![image](https://user-images.githubusercontent.com/50174803/138555871-dcec01db-5dcf-4b99-88fc-6f38f39ddcb8.png)
+
